@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { GlassCard } from './GlassCard';
 import { AnimatedCard } from './AnimatedCard';
 import { Complaints } from './Complaints';
+import { SpeedTest } from './SpeedTest';
 import {
   WashingMachine, UtensilsCrossed, Sparkle, CreditCard, Wifi, Headphones,
   LayoutDashboard, Bell, User, LogOut, Clock, CheckCircle, AlertCircle,
@@ -106,7 +107,7 @@ export function ServicesDashboard({ user, bookingsData, bookingData, onLogout, o
   const [menuSchedule, setMenuSchedule] = useState([]);
   const [myLaundries, setMyLaundries] = useState([]);
   const [myRoomServices, setMyRoomServices] = useState([]);
-  const [isSubmittingService, setIsSubmittingService] = useState(false);
+  const [submittingService, setSubmittingService] = useState(null);
 
   const handleAddComplaint = async (complaint) => {
     const { data, error } = await supabase
@@ -186,16 +187,23 @@ export function ServicesDashboard({ user, bookingsData, bookingData, onLogout, o
                     </div>
                     <motion.button 
                       onClick={async () => {
-                        setIsSubmittingService(true);
+                        setSubmittingService(item.label);
                         await addLaundryRequest({ user_email: user?.email, room_name: roomName, type: item.label });
-                        fetchStudentData();
-                        setIsSubmittingService(false);
+                        await fetchStudentData();
+                        setSubmittingService(null);
                       }}
-                      disabled={isSubmittingService}
-                      className="mt-3 w-full py-2 rounded-lg bg-blue-500/10 text-blue-500 text-sm font-medium hover:bg-blue-500/20 transition-colors disabled:opacity-50" 
+                      disabled={submittingService !== null}
+                      className="mt-3 w-full py-2 rounded-lg bg-blue-500/10 text-blue-500 text-sm font-medium hover:bg-blue-500/20 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5" 
                       whileTap={{ scale: 0.95 }}
                     >
-                      Request Pickup
+                      {submittingService === item.label ? (
+                        <>
+                          <span className="w-3.5 h-3.5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                          Requesting...
+                        </>
+                      ) : (
+                        'Request Pickup'
+                      )}
                     </motion.button>
                   </GlassCard>
                 </AnimatedCard>
@@ -273,16 +281,23 @@ export function ServicesDashboard({ user, bookingsData, bookingData, onLogout, o
                     </div>
                     <motion.button 
                       onClick={async () => {
-                        setIsSubmittingService(true);
+                        setSubmittingService(req.type);
                         await addRoomService({ user_email: user?.email, room_name: roomName, type: req.type });
-                        fetchStudentData();
-                        setIsSubmittingService(false);
+                        await fetchStudentData();
+                        setSubmittingService(null);
                       }}
-                      disabled={isSubmittingService}
-                      className="w-full py-2 rounded-lg bg-purple-500/10 text-purple-500 text-sm font-medium hover:bg-purple-500/20 transition-colors disabled:opacity-50" 
+                      disabled={submittingService !== null}
+                      className="w-full py-2 rounded-lg bg-purple-500/10 text-purple-500 text-sm font-medium hover:bg-purple-500/20 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5" 
                       whileTap={{ scale: 0.95 }}
                     >
-                      Request Now
+                      {submittingService === req.type ? (
+                        <>
+                          <span className="w-3.5 h-3.5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                          Requesting...
+                        </>
+                      ) : (
+                        'Request Now'
+                      )}
                     </motion.button>
                   </GlassCard>
                 </AnimatedCard>
@@ -373,16 +388,28 @@ export function ServicesDashboard({ user, bookingsData, bookingData, onLogout, o
 
         {/* Wifi */}
         {key === 'wifi' && (
-          <GlassCard className="p-6">
-            <div className="space-y-4">
-              {service.info.map((item, i) => (
-                <motion.div key={i} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }} className="flex items-center justify-between py-3 border-b border-border last:border-0">
-                  <span className="text-muted-foreground">{item.label}</span>
-                  <span className="font-semibold">{item.value}</span>
-                </motion.div>
-              ))}
-            </div>
-          </GlassCard>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <GlassCard className="p-6 h-full flex flex-col justify-between">
+              <div>
+                <h3 className="text-lg font-bold mb-4 text-foreground flex items-center gap-2">
+                  <Wifi className="w-5 h-5 text-indigo-500" /> Network Information
+                </h3>
+                <div className="space-y-4">
+                  {service.info.map((item, i) => (
+                    <motion.div key={i} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }} className="flex items-center justify-between py-3 border-b border-border/40 last:border-0">
+                      <span className="text-muted-foreground text-sm">{item.label}</span>
+                      <span className="font-semibold text-sm text-foreground">{item.value}</span>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+              <div className="mt-6 p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10 text-xs text-muted-foreground leading-relaxed">
+                ℹ️ To ensure maximum accuracy, please disconnect other heavy downloads or streams before running the speed test.
+              </div>
+            </GlassCard>
+
+            <SpeedTest />
+          </div>
         )}
 
         {/* Support */}

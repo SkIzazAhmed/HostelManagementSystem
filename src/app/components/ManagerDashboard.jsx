@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GlassCard } from './GlassCard';
 import { AnimatedCard } from './AnimatedCard';
+import { SpeedTest } from './SpeedTest';
 import { 
   WashingMachine, UtensilsCrossed, Sparkle, Wifi, Headphones, 
   LayoutDashboard, User, LogOut, Clock, CheckCircle, AlertCircle, 
@@ -25,10 +26,6 @@ export function ManagerDashboard({ user, onLogout }) {
   const [roomServices, setRoomServices] = useState([]);
   const [laundries, setLaundries] = useState([]);
   const [complaints, setComplaints] = useState([]);
-
-  // Wifi Speed Monitoring State
-  const [wifiSpeed, setWifiSpeed] = useState(98.4);
-  const [isTestingSpeed, setIsTestingSpeed] = useState(false);
 
   // Fetch all necessary manager data
   const fetchManagerData = async () => {
@@ -84,19 +81,6 @@ export function ManagerDashboard({ user, onLogout }) {
     }
   };
 
-  const runWifiSpeedTest = () => {
-    setIsTestingSpeed(true);
-    let current = 0;
-    const interval = setInterval(() => {
-      current = Math.random() * (115 - 80) + 80;
-      setWifiSpeed(parseFloat(current.toFixed(1)));
-    }, 150);
-
-    setTimeout(() => {
-      clearInterval(interval);
-      setIsTestingSpeed(false);
-    }, 2000);
-  };
 
   const sidebarItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -169,7 +153,7 @@ export function ManagerDashboard({ user, onLogout }) {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <GlassCard className="p-5 flex items-center gap-4">
                     <div className="w-12 h-12 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-500"><Wifi className="w-6 h-6" /></div>
-                    <div><h3 className="text-2xl font-bold">{wifiSpeed} Mbps</h3><p className="text-xs text-muted-foreground">Connected Speed</p></div>
+                    <div><h3 className="text-2xl font-bold">Live Test</h3><p className="text-xs text-muted-foreground">Go to Wifi tab</p></div>
                   </GlassCard>
                   <GlassCard className="p-5 flex items-center gap-4">
                     <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-500"><Sparkle className="w-6 h-6" /></div>
@@ -235,36 +219,42 @@ export function ManagerDashboard({ user, onLogout }) {
 
             {activeTab === 'wifi' && (
               <motion.div key="wifi" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
-                <GlassCard className="p-6 flex flex-col items-center">
-                  <h2 className="text-xl font-bold flex items-center gap-2 mb-2 self-start"><Wifi className="w-5 h-5 text-indigo-500" /> Hostels Wifi Control Center</h2>
-                  <p className="text-sm text-muted-foreground mb-8 self-start">Monitor latency, real-time router bandwidth, and bandwidth profiles.</p>
+                <div>
+                  <h2 className="text-xl font-bold flex items-center gap-2 mb-1"><Wifi className="w-5 h-5 text-indigo-500" /> Hostel Wifi Diagnostics</h2>
+                  <p className="text-sm text-muted-foreground">Run a live speed test to monitor hostel bandwidth, latency and upload capacity in real-time.</p>
+                </div>
 
-                  <div className="relative w-48 h-48 flex flex-col items-center justify-center mb-6">
-                    <svg className="absolute w-full h-full transform -rotate-90">
-                      <circle cx="96" cy="96" r="80" stroke="rgba(255,255,255,0.05)" strokeWidth="12" fill="transparent" />
-                      <circle cx="96" cy="96" r="80" stroke="url(#wifiGradient)" strokeWidth="12" fill="transparent" 
-                        strokeDasharray={502} strokeDashoffset={502 - (502 * Math.min(wifiSpeed, 120)) / 120} 
-                        className="transition-all duration-300"
-                      />
-                      <defs>
-                        <linearGradient id="wifiGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#8b5cf6" />
-                          <stop offset="100%" stopColor="#3b82f6" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                    <span className="text-3xl font-extrabold">{wifiSpeed}</span>
-                    <span className="text-xs text-muted-foreground font-semibold mt-1">Mbps Speed</span>
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                  {/* Network Info Panel */}
+                  <GlassCard className="p-6 h-full flex flex-col justify-between">
+                    <div>
+                      <h3 className="text-base font-bold mb-4 flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-indigo-500" /> Network Configuration
+                      </h3>
+                      <div className="space-y-3">
+                        {[
+                          { label: 'Network Name', value: 'NST-Hostel-5G' },
+                          { label: 'Router Model', value: 'TP-Link Archer AX73' },
+                          { label: 'Max Bandwidth', value: '100 Mbps' },
+                          { label: 'Active Devices', value: '47 / 80 max' },
+                          { label: 'Uptime', value: '99.8%' },
+                          { label: 'ISP', value: 'Airtel Fiber Business' },
+                        ].map((item, i) => (
+                          <div key={i} className="flex items-center justify-between py-2.5 border-b border-border/40 last:border-0">
+                            <span className="text-sm text-muted-foreground">{item.label}</span>
+                            <span className="text-sm font-semibold">{item.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="mt-6 p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/10 text-xs text-muted-foreground">
+                      ⚡ Run the speed test at different times of day to monitor peak-hour bandwidth degradation.
+                    </div>
+                  </GlassCard>
 
-                  <button 
-                    onClick={runWifiSpeedTest} 
-                    disabled={isTestingSpeed}
-                    className="px-6 py-2.5 bg-gradient-to-r from-primary to-blue-600 text-white rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition-all disabled:opacity-50"
-                  >
-                    {isTestingSpeed ? 'Testing Latency...' : 'Run Diagnostics Test'}
-                  </button>
-                </GlassCard>
+                  {/* Live Speed Test */}
+                  <SpeedTest />
+                </div>
               </motion.div>
             )}
 

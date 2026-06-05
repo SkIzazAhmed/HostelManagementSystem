@@ -1,10 +1,12 @@
-import { motion } from 'motion/react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { AnimatedCard } from './AnimatedCard';
 import { GlassCard } from './GlassCard';
 import { FloatingShapes } from './FloatingShapes';
+import { SpeedTest } from './SpeedTest';
 import {
   WashingMachine, UtensilsCrossed, Sparkle, CreditCard, Wifi, Headphones,
-  Clock, Shield, Zap, Star, ArrowRight, Sparkles, CheckCircle2
+  Clock, Shield, Zap, Star, ArrowRight, Sparkles, CheckCircle2, X
 } from 'lucide-react';
 
 const services = [
@@ -62,6 +64,7 @@ const services = [
     accentBg: 'bg-indigo-500/10',
     accentText: 'text-indigo-500',
     highlights: ['100 Mbps speed', 'Unlimited data', 'Up to 3 devices'],
+    isWifi: true,
   },
   {
     icon: Headphones,
@@ -84,6 +87,8 @@ const highlights = [
 ];
 
 export function Services({ onBookNow }) {
+  const [showSpeedTest, setShowSpeedTest] = useState(false);
+
   return (
     <div className="space-y-16">
       {/* Hero Section */}
@@ -235,14 +240,33 @@ export function Services({ onBookNow }) {
                 </div>
 
                 {/* CTA */}
-                <motion.button
-                  onClick={onBookNow}
-                  className={`w-full py-2.5 rounded-xl ${service.accentBg} ${service.accentText} text-sm font-semibold transition-all duration-300 hover:shadow-md flex items-center justify-center gap-2 group/btn`}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  Learn More
-                  <ArrowRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
-                </motion.button>
+                {service.isWifi ? (
+                  <div className="flex gap-2.5 mt-auto">
+                    <motion.button
+                      onClick={onBookNow}
+                      className={`flex-1 py-2.5 rounded-xl ${service.accentBg} ${service.accentText} text-sm font-semibold transition-all duration-300 hover:shadow-md flex items-center justify-center`}
+                      whileTap={{ scale: 0.97 }}
+                    >
+                      Book Stay
+                    </motion.button>
+                    <motion.button
+                      onClick={() => setShowSpeedTest(true)}
+                      className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-semibold transition-all duration-300 hover:shadow-md flex items-center justify-center hover:scale-103 active:scale-97 cursor-pointer"
+                      whileTap={{ scale: 0.97 }}
+                    >
+                      Test Speed
+                    </motion.button>
+                  </div>
+                ) : (
+                  <motion.button
+                    onClick={onBookNow}
+                    className={`w-full py-2.5 rounded-xl ${service.accentBg} ${service.accentText} text-sm font-semibold transition-all duration-300 hover:shadow-md flex items-center justify-center gap-2 group/btn mt-auto`}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    Learn More
+                    <ArrowRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
+                  </motion.button>
+                )}
               </GlassCard>
             </AnimatedCard>
           ))}
@@ -287,6 +311,40 @@ export function Services({ onBookNow }) {
           </div>
         </GlassCard>
       </motion.section>
+      {/* Speed Test Modal Overlay */}
+      <AnimatePresence>
+        {showSpeedTest && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowSpeedTest(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-md"
+            />
+            
+            {/* Modal Card */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: 'spring', duration: 0.4 }}
+              className="relative w-full max-w-lg z-10"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setShowSpeedTest(false)}
+                className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 border border-white/5 text-muted-foreground hover:text-foreground transition-all hover:scale-105 active:scale-95 cursor-pointer z-30"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <SpeedTest />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
