@@ -5,7 +5,20 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl     = import.meta.env.VITE_SUPABASE_URL     || 'https://cywccfxglanhketofhyw.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_Bvk4aCHwE4V_LAaauYbEcg_OpxMh973';
 
+console.log('🔌 [DormDesk] Supabase URL:', supabaseUrl);
+console.log('🔑 [DormDesk] Supabase Key prefix:', supabaseAnonKey ? supabaseAnonKey.substring(0, 15) + '...' : 'none');
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+const handleDbError = (operation, error) => {
+  const msg = error?.message || error || 'Unknown database error';
+  console.error(`❌ [DormDesk] DB Error (${operation}):`, msg);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('dormdesk-db-error', { 
+      detail: `${operation} failed: ${msg}` 
+    }));
+  }
+};
 
 // Debug: log connection errors to console so you can see them
 supabase.from('rooms').select('count', { count: 'exact', head: true }).then(({ error }) => {
@@ -13,6 +26,7 @@ supabase.from('rooms').select('count', { count: 'exact', head: true }).then(({ e
     console.error('⚠️ Supabase connection issue:', error.message);
     console.error('   Check your URL and anon key in supabase.js or .env file');
     console.error('   Tables might not exist — run supabase_setup.sql in your SQL editor');
+    handleDbError('Database Connection Test', error);
   } else {
     console.log('✅ Supabase connected successfully');
   }
@@ -52,9 +66,13 @@ export async function getProfile(email) {
   try {
     const { data, error } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
     if (error) throw error;
-    if (data) { ls.upsert('dormdesk_profiles', data); return data; }
+    if (data) {
+      const dbProfile = { ...data, synced: true };
+      ls.upsert('dormdesk_profiles', dbProfile);
+      return dbProfile;
+    }
   } catch (e) {
-    console.warn('getProfile DB failed:', e.message);
+    handleDbError('Get Profile', e);
   }
   return ls.get('dormdesk_profiles', []).find(p => p.email === email) || null;
 }
@@ -66,9 +84,13 @@ export async function saveProfile(email, role, status = 'approved') {
   try {
     const { data, error } = await supabase.from('profiles').upsert(profile, { onConflict: 'email' }).select();
     if (error) throw error;
-    if (data?.[0]) { ls.upsert('dormdesk_profiles', data[0]); return data[0]; }
+    if (data?.[0]) {
+      const dbProfile = { ...data[0], synced: true };
+      ls.upsert('dormdesk_profiles', dbProfile);
+      return dbProfile;
+    }
   } catch (e) {
-    console.warn('saveProfile DB failed:', e.message);
+    handleDbError('Save Profile', e);
   }
   return profile;
 }
@@ -77,9 +99,13 @@ export async function getProfiles() {
   try {
     const { data, error } = await supabase.from('profiles').select('*');
     if (error) throw error;
-    if (data) { ls.set('dormdesk_profiles', data); return data; }
+    if (data) {
+      const syncedData = data.map(p => ({ ...p, synced: true }));
+      ls.set('dormdesk_profiles', syncedData);
+      return syncedData;
+    }
   } catch (e) {
-    console.warn('getProfiles DB failed:', e.message);
+    handleDbError('Get Profiles', e);
   }
   return ls.get('dormdesk_profiles', []);
 }
@@ -95,13 +121,14 @@ export async function updateProfileStatus(email, status) {
     const { data, error } = await supabase.from('profiles').update({ status }).eq('email', email).select();
     if (error) throw error;
     if (data?.[0]) {
+      const dbProfile = { ...data[0], synced: true };
       const lp = ls.get('dormdesk_profiles', []);
       const i = lp.findIndex(p => p.email === email);
-      if (i >= 0) { lp[i] = data[0]; ls.set('dormdesk_profiles', lp); }
-      return data[0];
+      if (i >= 0) { lp[i] = dbProfile; ls.set('dormdesk_profiles', lp); }
+      return dbProfile;
     }
   } catch (e) {
-    console.warn('updateProfileStatus DB failed:', e.message);
+    handleDbError('Update Profile Status', e);
   }
   return localProfiles[idx] || null;
 }
@@ -111,9 +138,13 @@ export async function getLaundryRequests() {
   try {
     const { data, error } = await supabase.from('laundry_requests').select('*').order('created_at', { ascending: false });
     if (error) throw error;
-    if (data) { ls.set('dormdesk_laundries', data); return data; }
+    if (data) {
+      const syncedData = data.map(item => ({ ...item, synced: true }));
+      ls.set('dormdesk_laundries', syncedData);
+      return syncedData;
+    }
   } catch (e) {
-    console.warn('getLaundryRequests DB failed:', e.message);
+    handleDbError('Get Laundry Requests', e);
   }
   return ls.get('dormdesk_laundries', []);
 }
@@ -136,15 +167,15 @@ export async function addLaundryRequest({ user_email, room_name, type }) {
     }]).select();
     if (error) throw error;
     if (data?.[0]) {
-      // Replace temp record with real DB record
+      const dbRecord = { ...data[0], synced: true };
       const l = ls.get('dormdesk_laundries', []);
       const idx = l.findIndex(r => r.id === newReq.id);
-      if (idx >= 0) l[idx] = data[0]; else l.unshift(data[0]);
+      if (idx >= 0) l[idx] = dbRecord; else l.unshift(dbRecord);
       ls.set('dormdesk_laundries', l);
-      return data[0];
+      return dbRecord;
     }
   } catch (e) {
-    console.warn('addLaundryRequest DB failed:', e.message);
+    handleDbError('Add Laundry Request', e);
   }
   return newReq;
 }
@@ -157,11 +188,12 @@ export async function updateLaundryRequestStatus(id, status) {
     const { data, error } = await supabase.from('laundry_requests').update({ status }).eq('id', id).select();
     if (error) throw error;
     if (data?.[0]) {
-      ls.update('dormdesk_laundries', id, data[0]);
-      return data[0];
+      const dbRecord = { ...data[0], synced: true };
+      ls.update('dormdesk_laundries', id, dbRecord);
+      return dbRecord;
     }
   } catch (e) {
-    console.warn('updateLaundryRequestStatus DB failed:', e.message);
+    handleDbError('Update Laundry Request Status', e);
   }
   return localResult;
 }
@@ -171,9 +203,13 @@ export async function getRoomServices() {
   try {
     const { data, error } = await supabase.from('room_services').select('*').order('created_at', { ascending: false });
     if (error) throw error;
-    if (data) { ls.set('dormdesk_room_services', data); return data; }
+    if (data) {
+      const syncedData = data.map(item => ({ ...item, synced: true }));
+      ls.set('dormdesk_room_services', syncedData);
+      return syncedData;
+    }
   } catch (e) {
-    console.warn('getRoomServices DB failed:', e.message);
+    handleDbError('Get Room Services', e);
   }
   return ls.get('dormdesk_room_services', []);
 }
@@ -196,14 +232,15 @@ export async function addRoomService({ user_email, room_name, type }) {
     }]).select();
     if (error) throw error;
     if (data?.[0]) {
+      const dbRecord = { ...data[0], synced: true };
       const l = ls.get('dormdesk_room_services', []);
       const idx = l.findIndex(r => r.id === newReq.id);
-      if (idx >= 0) l[idx] = data[0]; else l.unshift(data[0]);
+      if (idx >= 0) l[idx] = dbRecord; else l.unshift(dbRecord);
       ls.set('dormdesk_room_services', l);
-      return data[0];
+      return dbRecord;
     }
   } catch (e) {
-    console.warn('addRoomService DB failed:', e.message);
+    handleDbError('Add Room Service', e);
   }
   return newReq;
 }
@@ -216,11 +253,12 @@ export async function updateRoomServiceStatus(id, status) {
     const { data, error } = await supabase.from('room_services').update({ status }).eq('id', id).select();
     if (error) throw error;
     if (data?.[0]) {
-      ls.update('dormdesk_room_services', id, data[0]);
-      return data[0];
+      const dbRecord = { ...data[0], synced: true };
+      ls.update('dormdesk_room_services', id, dbRecord);
+      return dbRecord;
     }
   } catch (e) {
-    console.warn('updateRoomServiceStatus DB failed:', e.message);
+    handleDbError('Update Room Service Status', e);
   }
   return localResult;
 }
@@ -239,7 +277,7 @@ export async function getMessMenu() {
     if (error) throw error;
     if (data?.length > 0) { ls.set('dormdesk_mess_menu', data); return data; }
   } catch (e) {
-    console.warn('getMessMenu DB failed:', e.message);
+    handleDbError('Get Mess Menu', e);
   }
   return ls.get('dormdesk_mess_menu', DEFAULT_MENU);
 }
@@ -252,7 +290,90 @@ export async function saveMessMenu(schedule) {
     const { error } = await supabase.from('mess_menu').upsert(schedule, { onConflict: 'meal' });
     if (error) throw error;
   } catch (e) {
-    console.warn('saveMessMenu DB failed:', e.message);
+    handleDbError('Save Mess Menu', e);
   }
   return schedule;
+}
+
+// ─── SYNC LOCAL OFFLINE DATA TO CENTRAL SUPABASE ─────────────────────────────
+export async function syncLocalData(userEmail) {
+  if (!userEmail || typeof window === 'undefined') return;
+  console.log('🔄 [DormDesk] Starting background sync of offline local data for:', userEmail);
+
+  // 1. Sync Laundry Requests
+  const laundries = ls.get('dormdesk_laundries', []);
+  let laundryChanged = false;
+  for (let i = 0; i < laundries.length; i++) {
+    const item = laundries[i];
+    if (!item.synced && item.user_email === userEmail) {
+      try {
+        const { data, error } = await supabase.from('laundry_requests').insert([{
+          user_email: item.user_email,
+          room_name: item.room_name,
+          type: item.type,
+          status: item.status || 'pending'
+        }]).select();
+        
+        if (!error && data?.[0]) {
+          laundries[i] = { ...data[0], synced: true };
+          laundryChanged = true;
+          console.log('✅ [DormDesk] Synced laundry request:', item.type);
+        }
+      } catch (e) {
+        console.error('❌ Failed to sync laundry request:', e);
+      }
+    }
+  }
+  if (laundryChanged) ls.set('dormdesk_laundries', laundries);
+
+  // 2. Sync Room Services
+  const services = ls.get('dormdesk_room_services', []);
+  let servicesChanged = false;
+  for (let i = 0; i < services.length; i++) {
+    const item = services[i];
+    if (!item.synced && item.user_email === userEmail) {
+      try {
+        const { data, error } = await supabase.from('room_services').insert([{
+          user_email: item.user_email,
+          room_name: item.room_name,
+          type: item.type,
+          status: item.status || 'pending'
+        }]).select();
+        
+        if (!error && data?.[0]) {
+          services[i] = { ...data[0], synced: true };
+          servicesChanged = true;
+          console.log('✅ [DormDesk] Synced room service request:', item.type);
+        }
+      } catch (e) {
+        console.error('❌ Failed to sync room service request:', e);
+      }
+    }
+  }
+  if (servicesChanged) ls.set('dormdesk_room_services', services);
+
+  // 3. Sync Profiles
+  const profiles = ls.get('dormdesk_profiles', []);
+  let profilesChanged = false;
+  for (let i = 0; i < profiles.length; i++) {
+    const item = profiles[i];
+    if (!item.synced && item.email === userEmail) {
+      try {
+        const { data, error } = await supabase.from('profiles').upsert({
+          email: item.email,
+          role: item.role,
+          status: item.status
+        }, { onConflict: 'email' }).select();
+        
+        if (!error && data?.[0]) {
+          profiles[i] = { ...data[0], synced: true };
+          profilesChanged = true;
+          console.log('✅ [DormDesk] Synced profile:', item.email);
+        }
+      } catch (e) {
+        console.error('❌ Failed to sync profile:', e);
+      }
+    }
+  }
+  if (profilesChanged) ls.set('dormdesk_profiles', profiles);
 }

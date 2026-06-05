@@ -10,11 +10,12 @@ import { Admin } from './components/Admin';
 import { ServicesDashboard } from './components/ServicesDashboard';
 import { Auth } from './components/Auth';
 import { useEffect } from 'react';
-import { supabase, getProfile } from '../supabase';
+import { supabase, getProfile, syncLocalData } from '../supabase';
 import { ManagerDashboard } from './components/ManagerDashboard';
 import { motion } from 'motion/react';
 import { Bed, AlertCircle } from 'lucide-react';
 import { GlassCard } from './components/GlassCard';
+import { Toaster, toast } from 'sonner';
 
 export default function App() {
   const [currentView, setCurrentView] = useState('home');
@@ -51,6 +52,9 @@ export default function App() {
       const u = session?.user ?? null;
       setUser(u);
       if (u) {
+        // Sync any offline records that were saved in localStorage
+        await syncLocalData(u.email);
+        
         if (u.email === 'bikjha2007@gmail.com') {
           setUserRole('admin');
         } else if (u.email === 'info.dormdesk@gmail.com') {
@@ -70,6 +74,9 @@ export default function App() {
       const u = session?.user ?? null;
       setUser(u);
       if (u) {
+        // Sync any offline records that were saved in localStorage
+        await syncLocalData(u.email);
+        
         if (u.email === 'bikjha2007@gmail.com') {
           setUserRole('admin');
         } else if (u.email === 'info.dormdesk@gmail.com') {
@@ -84,7 +91,16 @@ export default function App() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    // Connect DB error dispatching to UI notifications (sonner toasts)
+    const handleDbError = (e) => {
+      toast.error(e.detail || 'Database sync issue');
+    };
+    window.addEventListener('dormdesk-db-error', handleDbError);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('dormdesk-db-error', handleDbError);
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -274,12 +290,13 @@ export default function App() {
     };
   };
 
-  if (user && (userRole === 'manager' || userRole === 'manger' || user.email === 'info.dormdesk@gmail.com')) {
-    return <ManagerDashboard user={user} onLogout={handleLogout} />;
-  }
+  // Conditionally render the active layout component, wrapped in a single layout with Toast notifications
+  let activeLayout = null;
 
-  if (currentView === 'your_room' && userBookings.length > 0) {
-    return (
+  if (user && (userRole === 'manager' || userRole === 'manger' || user.email === 'info.dormdesk@gmail.com')) {
+    activeLayout = <ManagerDashboard user={user} onLogout={handleLogout} />;
+  } else if (currentView === 'your_room' && userBookings.length > 0) {
+    activeLayout = (
       <ServicesDashboard
         user={user}
         bookingsData={userBookings.map(formatBookingData)}
@@ -287,154 +304,161 @@ export default function App() {
         onBackToWebsite={() => setCurrentView('home')}
       />
     );
+  } else {
+    activeLayout = (
+      <div className="min-h-screen bg-background">
+        <Header
+          currentView={currentView}
+          onViewChange={handleViewChange}
+          user={user}
+          isAdmin={isAdmin}
+          hasRoom={userBookings.length > 0}
+          onLogout={handleLogout}
+        />
+
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {!user && currentView === 'home' && (
+            <Home onBookNow={() => setCurrentView('auth')} />
+          )}
+
+          {!user && currentView === 'auth' && (
+            <Auth onAuthSuccess={() => setCurrentView('home')} />
+          )}
+
+          {user && currentView === 'home' && (
+            <Home onBookNow={() => setCurrentView('rooms')} />
+          )}
+
+          {user && currentView === 'rooms' && (
+            <Rooms
+              rooms={availableRooms}
+              onBookRoom={handleBookRoom}
+              onAddRoom={() => setCurrentView('admin')}
+              isAdmin={isAdmin}
+              hasExistingBooking={hasExistingBooking}
+              onGoToRoom={() => setCurrentView('your_room')}
+            />
+          )}
+          {user && currentView === 'bookings' && (
+            <BookingForm
+              selectedRoom={selectedRoom}
+              onBack={handleBookingComplete}
+            />
+          )}
+          {currentView === 'about' && <About />}
+          {currentView === 'your_room' && userBookings.length === 0 && (
+            bookedStudent ? (
+              <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
+                <GlassCard className="p-12 max-w-md w-full border border-primary/20 bg-gradient-to-br from-primary/5 to-purple-500/5 relative overflow-hidden shadow-2xl">
+                  <div className="relative z-10 space-y-6">
+                    <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg animate-pulse">
+                      <Bed className="w-8 h-8 text-white animate-bounce" />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Setting Up Your Room...</h3>
+                      <p className="text-muted-foreground text-sm leading-relaxed">
+                        We are finalizing your hostel dashboard. This will only take a moment.
+                      </p>
+                    </div>
+                    <div className="w-full bg-muted/60 h-1.5 rounded-full overflow-hidden">
+                      <motion.div
+                        className="bg-gradient-to-r from-primary to-purple-600 h-full rounded-full"
+                        animate={{ x: ['-100%', '100%'] }}
+                        transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                        style={{ width: '50%' }}
+                      />
+                    </div>
+                  </div>
+                </GlassCard>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
+                <GlassCard className="p-12 max-w-md w-full border border-primary/20 bg-gradient-to-br from-primary/5 to-purple-500/5 relative overflow-hidden shadow-2xl">
+                  <div className="relative z-10 space-y-6">
+                    <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-destructive/10 to-destructive/20 flex items-center justify-center shadow-sm">
+                      <AlertCircle className="w-8 h-8 text-destructive" />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-bold text-foreground">No Room Booked</h3>
+                      <p className="text-muted-foreground text-sm leading-relaxed">
+                        You don't have an active room booking in our database. Book a room to access your student dashboard.
+                      </p>
+                    </div>
+                    <motion.button
+                      onClick={() => setCurrentView('rooms')}
+                      className="w-full bg-gradient-to-r from-primary to-purple-600 text-white py-3 rounded-xl font-semibold shadow-lg"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      Browse Rooms
+                    </motion.button>
+                  </div>
+                </GlassCard>
+              </div>
+            )
+          )}
+          {user && currentView === 'services' && !bookedStudent && (
+            <Services onBookNow={() => setCurrentView('rooms')} />
+          )}
+          {currentView === 'complaints' && <Complaints onAddComplaint={handleAddComplaint} />}
+          {isAdmin && currentView === 'admin' && (
+            <Admin
+              rooms={rooms}
+              bookings={bookings}
+              complaints={complaints}
+              onAddRoom={handleAddRoom}
+              onDeleteRoom={handleDeleteRoom}
+              onCancelBooking={handleCancelBooking}
+            />
+          )}
+        </main>
+
+        <footer className="bg-primary text-primary-foreground mt-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div>
+                <h4 className="mb-4">DormDesk</h4>
+                <p className="text-sm opacity-80">
+                  Smart hostel management for Newton School of Technology.
+                  Efficient, secure, and student-friendly.
+                </p>
+              </div>
+              <div>
+                <h4 className="mb-4">Quick Links</h4>
+                <ul className="space-y-2 text-sm">
+                  <li><button onClick={() => handleViewChange('home')} className="hover:underline opacity-80">Home</button></li>
+                  <li><button onClick={() => handleViewChange('about')} className="hover:underline opacity-80">About Us</button></li>
+                  {user && (
+                    <>
+                      <li><button onClick={() => handleViewChange('rooms')} className="hover:underline opacity-80">Rooms</button></li>
+                      <li><button onClick={() => handleViewChange('services')} className="hover:underline opacity-80">Services</button></li>
+                      <li><button onClick={() => handleViewChange('complaints')} className="hover:underline opacity-80">Complaints</button></li>
+                    </>
+                  )}
+                </ul>
+              </div>
+              <div>
+                <h4 className="mb-4">Contact</h4>
+                <ul className="space-y-2 text-sm opacity-80">
+                  <li>📍 Newton School of Technology,Mailasandra,Bengaluru</li>
+                  <li>📞 +91 8100282092</li>
+                  <li>✉️ info.dormdesk@gmail.com</li>
+                </ul>
+              </div>
+            </div>
+            <div className="border-t border-primary-foreground/20 mt-8 pt-8 text-center text-sm opacity-80">
+              <p>© 2026 DormDesk. All rights reserved.</p>
+            </div>
+          </div>
+        </footer>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header
-        currentView={currentView}
-        onViewChange={handleViewChange}
-        user={user}
-        isAdmin={isAdmin}
-        hasRoom={userBookings.length > 0}
-        onLogout={handleLogout}
-      />
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {!user && currentView === 'home' && (
-          <Home onBookNow={() => setCurrentView('auth')} />
-        )}
-
-        {!user && currentView === 'auth' && (
-          <Auth onAuthSuccess={() => setCurrentView('home')} />
-        )}
-
-        {user && currentView === 'home' && (
-          <Home onBookNow={() => setCurrentView('rooms')} />
-        )}
-
-        {user && currentView === 'rooms' && (
-          <Rooms
-            rooms={availableRooms}
-            onBookRoom={handleBookRoom}
-            onAddRoom={() => setCurrentView('admin')}
-            isAdmin={isAdmin}
-            hasExistingBooking={hasExistingBooking}
-            onGoToRoom={() => setCurrentView('your_room')}
-          />
-        )}
-        {user && currentView === 'bookings' && (
-          <BookingForm
-            selectedRoom={selectedRoom}
-            onBack={handleBookingComplete}
-          />
-        )}
-        {currentView === 'about' && <About />}
-        {currentView === 'your_room' && userBookings.length === 0 && (
-          bookedStudent ? (
-            <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
-              <GlassCard className="p-12 max-w-md w-full border border-primary/20 bg-gradient-to-br from-primary/5 to-purple-500/5 relative overflow-hidden shadow-2xl">
-                <div className="relative z-10 space-y-6">
-                  <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg animate-pulse">
-                    <Bed className="w-8 h-8 text-white animate-bounce" />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Setting Up Your Room...</h3>
-                    <p className="text-muted-foreground text-sm leading-relaxed">
-                      We are finalizing your hostel dashboard. This will only take a moment.
-                    </p>
-                  </div>
-                  <div className="w-full bg-muted/60 h-1.5 rounded-full overflow-hidden">
-                    <motion.div
-                      className="bg-gradient-to-r from-primary to-purple-600 h-full rounded-full"
-                      animate={{ x: ['-100%', '100%'] }}
-                      transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-                      style={{ width: '50%' }}
-                    />
-                  </div>
-                </div>
-              </GlassCard>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
-              <GlassCard className="p-12 max-w-md w-full border border-primary/20 bg-gradient-to-br from-primary/5 to-purple-500/5 relative overflow-hidden shadow-2xl">
-                <div className="relative z-10 space-y-6">
-                  <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-destructive/10 to-destructive/20 flex items-center justify-center shadow-sm">
-                    <AlertCircle className="w-8 h-8 text-destructive" />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="text-xl font-bold text-foreground">No Room Booked</h3>
-                    <p className="text-muted-foreground text-sm leading-relaxed">
-                      You don't have an active room booking in our database. Book a room to access your student dashboard.
-                    </p>
-                  </div>
-                  <motion.button
-                    onClick={() => setCurrentView('rooms')}
-                    className="w-full bg-gradient-to-r from-primary to-purple-600 text-white py-3 rounded-xl font-semibold shadow-lg"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    Browse Rooms
-                  </motion.button>
-                </div>
-              </GlassCard>
-            </div>
-          )
-        )}
-        {user && currentView === 'services' && !bookedStudent && (
-          <Services onBookNow={() => setCurrentView('rooms')} />
-        )}
-        {currentView === 'complaints' && <Complaints onAddComplaint={handleAddComplaint} />}
-        {isAdmin && currentView === 'admin' && (
-          <Admin
-            rooms={rooms}
-            bookings={bookings}
-            complaints={complaints}
-            onAddRoom={handleAddRoom}
-            onDeleteRoom={handleDeleteRoom}
-            onCancelBooking={handleCancelBooking}
-          />
-        )}
-      </main>
-
-      <footer className="bg-primary text-primary-foreground mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-              <h4 className="mb-4">DormDesk</h4>
-              <p className="text-sm opacity-80">
-                Smart hostel management for Newton School of Technology.
-                Efficient, secure, and student-friendly.
-              </p>
-            </div>
-            <div>
-              <h4 className="mb-4">Quick Links</h4>
-              <ul className="space-y-2 text-sm">
-                <li><button onClick={() => handleViewChange('home')} className="hover:underline opacity-80">Home</button></li>
-                <li><button onClick={() => handleViewChange('about')} className="hover:underline opacity-80">About Us</button></li>
-                {user && (
-                  <>
-                    <li><button onClick={() => handleViewChange('rooms')} className="hover:underline opacity-80">Rooms</button></li>
-                    <li><button onClick={() => handleViewChange('services')} className="hover:underline opacity-80">Services</button></li>
-                    <li><button onClick={() => handleViewChange('complaints')} className="hover:underline opacity-80">Complaints</button></li>
-                  </>
-                )}
-              </ul>
-            </div>
-            <div>
-              <h4 className="mb-4">Contact</h4>
-              <ul className="space-y-2 text-sm opacity-80">
-                <li>📍 Newton School of Technology,Mailasandra,Bengaluru</li>
-                <li>📞 +91 8100282092</li>
-                <li>✉️ info.dormdesk@gmail.com</li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-primary-foreground/20 mt-8 pt-8 text-center text-sm opacity-80">
-            <p>© 2026 DormDesk. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
-    </div>
+    <>
+      <Toaster position="top-right" richColors />
+      {activeLayout}
+    </>
   );
 }
