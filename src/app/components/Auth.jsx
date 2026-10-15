@@ -10,7 +10,6 @@ export function Auth({ onAuthSuccess }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState('student');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
@@ -39,8 +38,8 @@ export function Auth({ onAuthSuccess }) {
         });
         if (error) throw error;
 
-        // Save profile with corresponding role
-        await saveProfile(email, role, 'approved');
+        // Everyone signs up as a student; manager/admin access is granted separately.
+        await saveProfile(email, 'student', 'approved');
 
         setMessage('Registration successful! You can now log in.');
         setIsLogin(true);
@@ -94,20 +93,6 @@ export function Auth({ onAuthSuccess }) {
         )}
 
          <form onSubmit={handleSubmit} className="space-y-4">
-          {!isLogin && (
-            <div>
-              <label htmlFor="auth-role" className="block text-sm font-medium mb-1.5 text-foreground">Account Type</label>
-              <select
-                id="auth-role"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="w-full px-4 py-2.5 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-foreground"
-              >
-                <option value="student">Student</option>
-                <option value="manager">Hostel Manager</option>
-              </select>
-            </div>
-          )}
           <div>
             <label htmlFor="auth-email" className="block text-sm font-medium mb-1.5 text-foreground">Email</label>
             <div className="relative">
