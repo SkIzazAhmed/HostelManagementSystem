@@ -25,6 +25,9 @@ import { CONTACT, LAST_UPDATED } from './siteInfo';
 import { GlassCard } from './components/GlassCard';
 import { Toaster, toast } from 'sonner';
 
+// The account that gets the Admin panel.
+const ADMIN_EMAIL = 'ayanbabu6651@gmail.com';
+
 export default function App() {
   const [currentView, setCurrentView] = useState('home');
   const [selectedRoom, setSelectedRoom] = useState(null);
@@ -39,7 +42,7 @@ export default function App() {
   const [faqTarget, setFaqTarget] = useState(null);
 
   // Designate the admin account
-  const isAdmin = user?.email === 'bikjha2007@gmail.com';
+  const isAdmin = user?.email === ADMIN_EMAIL;
   const userBookings = bookings.filter(b => b.user_email === user?.email && b.status === 'confirmed');
   const hasExistingBooking = userBookings.length > 0;
   // Only show rooms that are not marked unavailable
@@ -70,7 +73,7 @@ export default function App() {
         // Sync any offline records that were saved in localStorage
         await syncLocalData(u.email);
         
-        if (u.email === 'bikjha2007@gmail.com') {
+        if (u.email === ADMIN_EMAIL) {
           setUserRole('admin');
         } else if (u.email === 'info.dormdesk@gmail.com') {
           setUserRole('manager');
@@ -92,7 +95,7 @@ export default function App() {
         // Sync any offline records that were saved in localStorage
         await syncLocalData(u.email);
         
-        if (u.email === 'bikjha2007@gmail.com') {
+        if (u.email === ADMIN_EMAIL) {
           setUserRole('admin');
         } else if (u.email === 'info.dormdesk@gmail.com') {
           setUserRole('manager');
