@@ -27,6 +27,8 @@ import { Toaster, toast } from 'sonner';
 
 // The account that gets the Admin panel.
 const ADMIN_EMAIL = 'ayanbabu6651@gmail.com';
+// The account that gets the Manager dashboard.
+const MANAGER_EMAIL = 'ayanbabu3333@gmail.com';
 
 export default function App() {
   const [currentView, setCurrentView] = useState('home');
@@ -75,7 +77,7 @@ export default function App() {
         
         if (u.email === ADMIN_EMAIL) {
           setUserRole('admin');
-        } else if (u.email === 'info.dormdesk@gmail.com') {
+        } else if (u.email === MANAGER_EMAIL) {
           setUserRole('manager');
         } else {
           const prof = await getProfile(u.email);
@@ -97,7 +99,7 @@ export default function App() {
         
         if (u.email === ADMIN_EMAIL) {
           setUserRole('admin');
-        } else if (u.email === 'info.dormdesk@gmail.com') {
+        } else if (u.email === MANAGER_EMAIL) {
           setUserRole('manager');
         } else {
           const prof = await getProfile(u.email);
@@ -321,7 +323,7 @@ export default function App() {
   // Conditionally render the active layout component, wrapped in a single layout with Toast notifications
   let activeLayout = null;
 
-  if (user && (userRole === 'manager' || userRole === 'manger' || user.email === 'info.dormdesk@gmail.com')) {
+  if (user && (userRole === 'manager' || userRole === 'manger' || user.email === MANAGER_EMAIL)) {
     activeLayout = <ManagerDashboard user={user} onLogout={handleLogout} />;
   } else if (currentView === 'your_room' && userBookings.length > 0) {
     activeLayout = (
