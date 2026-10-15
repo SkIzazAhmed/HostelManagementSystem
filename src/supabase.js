@@ -2,8 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 
 // ─── Supabase Client ─────────────────────────────────────────────────────────
 // Get these values from: Supabase Dashboard → Project Settings → API
-const supabaseUrl     = import.meta.env.VITE_SUPABASE_URL     || 'https://cywccfxglanhketofhyw.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_Bvk4aCHwE4V_LAaauYbEcg_OpxMh973';
+const supabaseUrl     = import.meta.env.VITE_SUPABASE_URL     || 'https://rxgbkvdiyjtgnoyhdfdd.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_ElIe7b-_7wsEJdZyrP7aUA_6U_HB1Kd';
 
 console.log('🔌 [DormDesk] Supabase URL:', supabaseUrl);
 console.log('🔑 [DormDesk] Supabase Key prefix:', supabaseAnonKey ? supabaseAnonKey.substring(0, 15) + '...' : 'none');
