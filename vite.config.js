@@ -24,6 +24,10 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  define: {
+    // Shown in the footer as the site's "last updated" date.
+    __LAST_UPDATED__: JSON.stringify(new Date().toISOString()),
+  },
   resolve: {
     alias: {
       // Alias @ to the src directory

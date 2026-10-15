@@ -12,6 +12,7 @@ import {
   Brush, ShowerHead, Bug, Phone, Hand
 } from 'lucide-react';
 import { Logo } from './brand/Logo';
+import { CopyButton } from './site/CopyButton';
 
 const serviceDetails = {
   laundry: {
@@ -68,7 +69,7 @@ const serviceDetails = {
     color: 'from-indigo-500 to-blue-500',
     description: 'Manage your hostel wifi connection and check usage.',
     info: [
-      { label: 'Network Name', value: 'NST-Hostel-5G' },
+      { label: 'Network Name', value: 'NST-Hostel-5G', copyable: true },
       { label: 'Speed', value: '100 Mbps' },
       { label: 'Data Used', value: '45.2 GB / Unlimited' },
       { label: 'Connected Devices', value: '2 / 3 allowed' },
@@ -405,6 +406,7 @@ export function ServicesDashboard({ user, bookingsData, bookingData, onLogout, o
                       <span className="font-semibold text-sm text-foreground flex items-center gap-2">
                         {item.online && <span className="w-2 h-2 rounded-full bg-green-500" aria-hidden="true" />}
                         {item.value}
+                        {item.copyable && <CopyButton value={item.value} label={`Copy ${item.label.toLowerCase()}`} className="-my-1" />}
                       </span>
                     </motion.div>
                   ))}

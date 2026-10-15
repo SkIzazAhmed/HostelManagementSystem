@@ -4,7 +4,21 @@ import { AnimatedCard } from './AnimatedCard';
 import { GlassCard } from './GlassCard';
 import { useState } from 'react';
 
-export function Rooms({ rooms, onBookRoom, onAddRoom, isAdmin, hasExistingBooking, onGoToRoom }) {
+function RoomCardSkeleton() {
+  return (
+    <GlassCard className="overflow-hidden">
+      <div className="h-[184px] bg-muted animate-pulse motion-reduce:animate-none" />
+      <div className="p-6 space-y-4 animate-pulse motion-reduce:animate-none">
+        <div className="h-5 w-1/2 rounded bg-muted" />
+        <div className="h-4 w-1/3 rounded bg-muted" />
+        <div className="flex gap-2"><div className="h-6 w-20 rounded-full bg-muted" /><div className="h-6 w-16 rounded-full bg-muted" /></div>
+        <div className="h-10 w-full rounded-lg bg-muted" />
+      </div>
+    </GlassCard>
+  );
+}
+
+export function Rooms({ rooms, loading = false, onBookRoom, onAddRoom, isAdmin, hasExistingBooking, onGoToRoom }) {
   const [filter, setFilter] = useState('all');
 
   const filteredRooms = rooms.filter(room => {
@@ -23,6 +37,20 @@ export function Rooms({ rooms, onBookRoom, onAddRoom, isAdmin, hasExistingBookin
     ];
     return gradients[index % gradients.length];
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-8" aria-busy="true">
+        <div className="text-center">
+          <h1 className="mb-3 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Our Rooms</h1>
+          <p className="text-muted-foreground text-lg" role="status">Loading rooms…</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[0, 1, 2].map((i) => <RoomCardSkeleton key={i} />)}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

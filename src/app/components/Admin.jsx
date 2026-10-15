@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { getProfiles, updateProfileStatus } from '../../supabase';
-import { Calendar, Users, IndianRupee, Bed, Plus, Trash2 } from 'lucide-react';
+import { Calendar, Users, IndianRupee, Bed, Plus, Trash2, TriangleAlert, LoaderCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GlassCard } from './GlassCard';
+import { ConfirmDialog } from './site/ConfirmDialog';
 
 export function Admin({ rooms, bookings, complaints = [], onAddRoom, onDeleteRoom, onCancelBooking }) {
   const [activeTab, setActiveTab] = useState('rooms');
@@ -32,6 +33,10 @@ export function Admin({ rooms, bookings, complaints = [], onAddRoom, onDeleteRoo
 
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [newRoom, setNewRoom] = useState({ name: '', type: 'Shared', capacity: 1, beds: 1, price: 0, amenities: '' });
+  const [addRoomError, setAddRoomError] = useState(null);
+  const [savingRoom, setSavingRoom] = useState(false);
+  // { kind: 'room' | 'booking', id, name } while a confirmation dialog is open
+  const [pendingAction, setPendingAction] = useState(null);
 
   const totalRevenue = bookings.reduce((sum, booking) => {
     const room = rooms.find(r => r.name === (booking.room || booking.room_name));
@@ -50,20 +55,51 @@ export function Admin({ rooms, bookings, complaints = [], onAddRoom, onDeleteRoo
     { label: 'Active Guests', value: activeGuests.toString(), icon: Users, color: 'from-orange-500 to-amber-500' },
   ];
 
-  const handleAddRoom = () => {
-    if (!newRoom.name || newRoom.price <= 0) return;
+  const handleAddRoom = async () => {
+    if (!newRoom.name.trim()) {
+      setAddRoomError('Enter a room name.');
+      return;
+    }
+    if (newRoom.price <= 0) {
+      setAddRoomError('Enter a monthly price greater than ₹0.');
+      return;
+    }
+    setAddRoomError(null);
     const room = {
-      id: Date.now(), name: newRoom.name, type: newRoom.type,
+      id: Date.now(), name: newRoom.name.trim(), type: newRoom.type,
       capacity: newRoom.capacity, beds: newRoom.beds, price: newRoom.price,
       amenities: newRoom.amenities.split(',').map(a => a.trim()).filter(a => a),
     };
-    onAddRoom(room);
+    setSavingRoom(true);
+    const { error } = (await onAddRoom(room)) || {};
+    setSavingRoom(false);
+    if (error) {
+      setAddRoomError(`Could not save the room: ${error.message}`);
+      return;
+    }
     setShowAddRoom(false);
     setNewRoom({ name: '', type: 'Shared', capacity: 1, beds: 1, price: 0, amenities: '' });
   };
 
+  const confirmPendingAction = () => {
+    if (pendingAction?.kind === 'room') onDeleteRoom(pendingAction.id);
+    if (pendingAction?.kind === 'booking') onCancelBooking(pendingAction.id);
+    setPendingAction(null);
+  };
+
   return (
     <div className="space-y-6">
+      <ConfirmDialog
+        open={Boolean(pendingAction)}
+        onOpenChange={(open) => !open && setPendingAction(null)}
+        title={pendingAction?.kind === 'room' ? `Delete ${pendingAction?.name}?` : 'Cancel this booking?'}
+        description={pendingAction?.kind === 'room'
+          ? 'The room will be removed from the listings. This cannot be undone.'
+          : `This cancels ${pendingAction?.name} and makes the room available again.`}
+        confirmLabel={pendingAction?.kind === 'room' ? 'Delete room' : 'Cancel booking'}
+        cancelLabel={pendingAction?.kind === 'room' ? 'Keep room' : 'Keep booking'}
+        onConfirm={confirmPendingAction}
+      />
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Admin Dashboard</h1>
         <div className="flex gap-2 bg-muted/50 backdrop-blur-lg rounded-xl p-1 overflow-x-auto max-w-full">
@@ -156,7 +192,7 @@ export function Admin({ rooms, bookings, complaints = [], onAddRoom, onDeleteRoo
                           <td className="p-4">
                             {booking.status === 'confirmed' && onCancelBooking && (
                               <motion.button
-                                onClick={() => onCancelBooking(booking.id)}
+                                onClick={() => setPendingAction({ kind: 'booking', id: booking.id, name: `${booking.guest || booking.guest_name || 'this guest'}'s booking for ${booking.room_name || booking.room}` })}
                                 className="bg-destructive/15 hover:bg-destructive/25 text-destructive px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
@@ -184,6 +220,12 @@ export function Admin({ rooms, bookings, complaints = [], onAddRoom, onDeleteRoo
               {showAddRoom && (
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
                   <GlassCard className="p-6"><h3 className="mb-4">Add New Room</h3>
+                    {addRoomError && (
+                      <div role="alert" className="mb-4 flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+                        <TriangleAlert className="w-4 h-4 mt-0.5" />
+                        {addRoomError}
+                      </div>
+                    )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-medium text-muted-foreground">Room Name</label>
@@ -211,8 +253,8 @@ export function Admin({ rooms, bookings, complaints = [], onAddRoom, onDeleteRoo
                       </div>
                     </div>
                     <div className="flex gap-3 mt-4">
-                      <motion.button onClick={handleAddRoom} className="flex-1 bg-gradient-to-r from-primary to-purple-600 text-primary-foreground py-3 rounded-lg" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>Add Room</motion.button>
-                      <motion.button onClick={() => setShowAddRoom(false)} className="flex-1 bg-muted text-foreground py-3 rounded-lg" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>Cancel</motion.button>
+                      <motion.button onClick={handleAddRoom} disabled={savingRoom} className="flex-1 bg-gradient-to-r from-primary to-purple-600 text-primary-foreground py-3 rounded-lg flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-wait" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>{savingRoom ? (<><LoaderCircle className="w-4 h-4 animate-spin motion-reduce:animate-none" />Saving…</>) : 'Add Room'}</motion.button>
+                      <motion.button onClick={() => { setShowAddRoom(false); setAddRoomError(null); }} className="flex-1 bg-muted text-foreground py-3 rounded-lg" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>Cancel</motion.button>
                     </div>
                   </GlassCard>
                 </motion.div>
@@ -227,7 +269,7 @@ export function Admin({ rooms, bookings, complaints = [], onAddRoom, onDeleteRoo
                     <GlassCard className="p-6 group hover:shadow-xl transition-all">
                       <div className="flex items-start justify-between mb-4">
                         <div><h3 className="mb-1">{room.name}</h3><p className="text-sm text-muted-foreground">{room.type} Room</p></div>
-                        <motion.button onClick={() => onDeleteRoom(room.id)} aria-label={`Delete ${room.name}`} title="Delete room" className="text-destructive hover:bg-destructive/10 p-2 rounded-lg" whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}><Trash2 className="w-4 h-4" /></motion.button>
+                        <motion.button onClick={() => setPendingAction({ kind: 'room', id: room.id, name: room.name })} aria-label={`Delete ${room.name}`} title="Delete room" className="text-destructive hover:bg-destructive/10 p-2 rounded-lg" whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}><Trash2 className="w-4 h-4" /></motion.button>
                       </div>
                       <div className="grid grid-cols-3 gap-4 mb-4">
                         <div><p className="text-2xl font-semibold">{room.capacity}</p><p className="text-xs text-muted-foreground">Capacity</p></div>

@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Calendar, User, Mail, Phone, Check, ArrowLeft } from 'lucide-react';
+import { Calendar, User, Mail, Phone, Check, ArrowLeft, LoaderCircle, TriangleAlert } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GlassCard } from './GlassCard';
 import confetti from 'canvas-confetti';
 import emailjs from '@emailjs/browser';
+import { CopyButton } from './site/CopyButton';
 
 const ACADEMIC_MONTHS = [
   { id: 'jun_26', name: 'June', year: 2026 },
@@ -41,6 +42,7 @@ export function BookingForm({ selectedRoom, onBack }) {
   const [submitted, setSubmitted] = useState(false);
   const [bookingRef, setBookingRef] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [emailFailed, setEmailFailed] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -95,6 +97,7 @@ export function BookingForm({ selectedRoom, onBack }) {
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
     }).catch((error) => {
       console.error('Failed to send email', error);
+      setEmailFailed(true);
       setIsSubmitting(false);
       setSubmitted(true);
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
@@ -108,13 +111,23 @@ export function BookingForm({ selectedRoom, onBack }) {
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', delay: 0.2 }} className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-xl">
             <Check className="w-10 h-10 text-white" />
           </motion.div>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} role="status">
             <h2 className="mb-2">Booking Confirmed!</h2>
-            <p className="text-muted-foreground">Thank you for your reservation. A confirmation email has been sent to {formData.email}.</p>
+            <p className="text-muted-foreground">
+              {emailFailed
+                ? 'Thank you for your reservation.'
+                : `Thank you for your reservation. A confirmation email has been sent to ${formData.email}.`}
+            </p>
+            {emailFailed && (
+              <p className="mt-3 inline-flex items-start gap-2 text-sm text-amber-600 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 text-left">
+                <TriangleAlert className="w-4 h-4 mt-0.5" />
+                We couldn't send the confirmation email. Copy your booking reference below to keep a record.
+              </p>
+            )}
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
             <GlassCard className="p-6 space-y-3 bg-gradient-to-br from-primary/5 to-purple-500/5">
-              <div className="flex justify-between items-center"><span className="text-muted-foreground">Booking Reference</span><span className="font-mono font-semibold text-xs bg-muted/50 px-2.5 py-1 rounded-lg max-w-[220px] truncate" title={bookingRef}>{bookingRef}</span></div>
+              <div className="flex justify-between items-center"><span className="text-muted-foreground">Booking Reference</span><span className="flex items-center gap-1 min-w-0"><span className="font-mono font-semibold text-xs bg-muted/50 px-2.5 py-1 rounded-lg max-w-[220px] truncate" title={bookingRef}>{bookingRef}</span><CopyButton value={bookingRef} label="Copy booking reference" /></span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Room</span><span className="font-semibold">{selectedRoom?.name}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Months Booked</span><span className="font-semibold max-w-[280px] truncate" title={selectedMonthsString}>{selectedMonthsString}</span></div>
               <div className="flex justify-between pt-3 border-t border-border"><span>Total</span><span className="text-xl font-semibold text-primary">₹{(totalPrice + Math.round(totalPrice * 0.1)).toLocaleString()}</span></div>
@@ -187,7 +200,7 @@ export function BookingForm({ selectedRoom, onBack }) {
               </div>
               <div><label className="block mb-2">Special Requests (Optional)</label><textarea name="specialRequests" value={formData.specialRequests} onChange={handleChange} rows={4} className="w-full px-4 py-2 bg-input-background border border-border rounded-lg" placeholder="Any special requirements or requests..." /></div>
               <motion.button type="submit" disabled={isSubmitting || selectedMonths.length === 0} className="w-full bg-gradient-to-r from-primary to-purple-600 text-primary-foreground py-4 rounded-xl shadow-lg relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed" whileHover={(!isSubmitting && selectedMonths.length > 0) ? { scale: 1.02, boxShadow: "0 20px 40px rgba(0,0,0,0.3)" } : {}} whileTap={(!isSubmitting && selectedMonths.length > 0) ? { scale: 0.98 } : {}}>
-                <span className="relative z-10">{isSubmitting ? 'Processing...' : 'Confirm Booking'}</span>
+                <span className="relative z-10 flex items-center justify-center gap-2">{isSubmitting ? (<><LoaderCircle className="w-5 h-5 animate-spin motion-reduce:animate-none" />Processing…</>) : 'Confirm Booking'}</span>
                 {(!isSubmitting && selectedMonths.length > 0) && <motion.div className="absolute inset-0 bg-white/20" initial={{ x: '-100%' }} whileHover={{ x: '100%' }} transition={{ duration: 0.5 }} />}
               </motion.button>
             </form>

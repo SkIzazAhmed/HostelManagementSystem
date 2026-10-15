@@ -61,6 +61,25 @@ const ls = {
   },
 };
 
+// ─── COMPLAINTS ──────────────────────────────────────────────────────────────
+
+// Returns { data, error } so forms can show a success or error state.
+export async function addComplaint(complaint) {
+  const { data, error } = await supabase
+    .from('complaints')
+    .insert([{
+      date: complaint.date,
+      type: complaint.type,
+      room_no: complaint.roomNo,
+      usn: complaint.usn,
+      category: complaint.category,
+      context: complaint.context,
+      email: complaint.email
+    }])
+    .select();
+  return { data, error };
+}
+
 // ─── PROFILES ────────────────────────────────────────────────────────────────
 export async function getProfile(email) {
   try {

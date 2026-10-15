@@ -1,0 +1,69 @@
+/* Print stylesheet: clean, ink-friendly pages (e.g. a booking confirmation or complaint reference). */
+@media print {
+  @page {
+    margin: 1.5cm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Navigation, sidebars and floating widgets are not useful on paper. */
+  header,
+  nav,
+  aside,
+  footer button,
+  [role='dialog'],
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+
+  footer {
+    background: #fff !important;
+    color: #000 !important;
+    border-top: 1px solid #000;
+  }
+
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    backdrop-filter: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Gradient text becomes plain black so it is readable without background printing. */
+  .bg-clip-text {
+    background: none !important;
+    color: #000 !important;
+    -webkit-text-fill-color: #000 !important;
+  }
+
+  /* Show where web links point. */
+  a[href^='http']::after {
+    content: ' (' attr(href) ')';
+    font-size: 0.85em;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+
+  table,
+  img,
+  svg {
+    break-inside: avoid;
+  }
+}

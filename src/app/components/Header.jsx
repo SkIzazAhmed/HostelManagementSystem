@@ -1,10 +1,21 @@
-import { Menu, X, House, Bed, Info, Settings, Wrench, MessageSquareWarning, LogIn, LogOut } from 'lucide-react';
-import { useState } from 'react';
+import { Menu, X, House, Bed, Info, Settings, Wrench, MessageSquareWarning, LogIn, LogOut, Search } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LogoMark } from './brand/Logo';
 
-export function Header({ currentView, onViewChange, user, isAdmin, onLogout, hasRoom }) {
+export function Header({ currentView, onViewChange, user, isAdmin, onLogout, hasRoom, onOpenSearch }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setMobileMenuOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [mobileMenuOpen]);
+
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
 
   // If not logged in, restrict nav items.
   const allNavItems = [
@@ -78,6 +89,19 @@ export function Header({ currentView, onViewChange, user, isAdmin, onLogout, has
               </motion.button>
             ))}
             
+            <motion.button
+              type="button"
+              onClick={onOpenSearch}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-primary-foreground/10 transition-all"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              aria-label="Search"
+              aria-keyshortcuts={isMac ? 'Meta+K' : 'Control+K'}
+            >
+              <Search className="w-4 h-4" />
+              <kbd className="hidden lg:inline text-[10px] opacity-70 border border-primary-foreground/30 rounded px-1">{isMac ? '⌘K' : 'Ctrl K'}</kbd>
+            </motion.button>
+
             <div className="w-px h-6 bg-primary-foreground/20 mx-2" />
             
             {user ? (
@@ -103,17 +127,28 @@ export function Header({ currentView, onViewChange, user, isAdmin, onLogout, has
             )}
           </nav>
 
-          {/* Mobile Menu Button */}
-          <motion.button
-            className="md:hidden p-2 rounded-lg hover:bg-primary-foreground/10"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            whileTap={{ scale: 0.9 }}
-            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={mobileMenuOpen}
-            aria-controls="mobile-nav"
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </motion.button>
+          {/* Mobile Search + Menu Buttons */}
+          <div className="md:hidden flex items-center gap-1">
+            <motion.button
+              type="button"
+              className="p-2 rounded-lg hover:bg-primary-foreground/10"
+              onClick={onOpenSearch}
+              whileTap={{ scale: 0.9 }}
+              aria-label="Search"
+            >
+              <Search className="w-6 h-6" />
+            </motion.button>
+            <motion.button
+              className="p-2 rounded-lg hover:bg-primary-foreground/10"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              whileTap={{ scale: 0.9 }}
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-nav"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </motion.button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}

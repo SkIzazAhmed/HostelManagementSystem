@@ -3,8 +3,9 @@ import { motion } from 'motion/react';
 import { AnimatedCard } from './AnimatedCard';
 import { FloatingShapes } from './FloatingShapes';
 import { GlassCard } from './GlassCard';
+import { Faq } from './site/Faq';
 
-export function Home({ onBookNow }) {
+export function Home({ onBookNow, faqOpenId }) {
   const features = [
     { icon: WashingMachine, title: 'Laundry', description: 'On-site laundry services', color: 'text-blue-500' },
     { icon: UtensilsCrossed, title: 'Menu', description: 'Delicious meals & dining options', color: 'text-amber-500' },
@@ -177,6 +178,8 @@ export function Home({ onBookNow }) {
           </motion.button>
         </GlassCard>
       </motion.section>
+
+      <Faq openRequest={faqOpenId} />
     </div>
   );
 }
