@@ -6,8 +6,9 @@ import { SpeedTest } from './SpeedTest';
 import { 
   WashingMachine, UtensilsCrossed, Sparkle, Wifi, Headphones, 
   LayoutDashboard, User, LogOut, Clock, CheckCircle, AlertCircle, 
-  MessageSquareWarning, Bed, Activity, Send
+  MessageSquareWarning, Activity, Send, ClipboardList, Zap
 } from 'lucide-react';
+import { Logo } from './brand/Logo';
 import { 
   getRoomServices, updateRoomServiceStatus, 
   getLaundryRequests, updateLaundryRequestStatus, 
@@ -95,14 +96,8 @@ export function ManagerDashboard({ user, onLogout }) {
     <div className="min-h-screen bg-background flex text-foreground">
       {/* Sidebar - Desktop */}
       <aside className="hidden lg:flex flex-col w-64 bg-card border-r border-border fixed h-full z-40">
-        <div className="p-6 border-b border-border flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
-            <Bed className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h3 className="font-bold text-lg">DormDesk</h3>
-            <p className="text-xs text-muted-foreground">Manager Portal</p>
-          </div>
+        <div className="p-6 border-b border-border">
+          <Logo tagline="Manager Portal" />
         </div>
 
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -132,7 +127,7 @@ export function ManagerDashboard({ user, onLogout }) {
               <p className="font-medium text-sm truncate">{user?.email}</p>
               <p className="text-xs text-muted-foreground truncate">Hostel Manager</p>
             </div>
-            <button onClick={onLogout} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground">
+            <button onClick={onLogout} title="Log Out" aria-label="Log out" className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground">
               <LogOut className="w-4 h-4" />
             </button>
           </div>
@@ -146,7 +141,10 @@ export function ManagerDashboard({ user, onLogout }) {
             {activeTab === 'overview' && (
               <motion.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
                 <GlassCard className="p-8 bg-gradient-to-br from-primary/5 to-purple-500/5 relative overflow-hidden">
-                  <h1 className="text-3xl font-bold mb-2">Welcome Back, Manager! 📋</h1>
+                  <h1 className="text-3xl font-bold mb-2 flex items-center gap-3 flex-wrap">
+                    Welcome Back, Manager!
+                    <ClipboardList className="w-8 h-8 text-primary" />
+                  </h1>
                   <p className="text-muted-foreground">Manage your hostel services, wifi speeds, laundry list, and student complaints here.</p>
                 </GlassCard>
 
@@ -247,8 +245,9 @@ export function ManagerDashboard({ user, onLogout }) {
                         ))}
                       </div>
                     </div>
-                    <div className="mt-6 p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/10 text-xs text-muted-foreground">
-                      ⚡ Run the speed test at different times of day to monitor peak-hour bandwidth degradation.
+                    <div className="mt-6 p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/10 text-xs text-muted-foreground flex items-start gap-2">
+                      <Zap className="w-3.5 h-3.5 mt-px shrink-0 text-indigo-500" />
+                      Run the speed test at different times of day to monitor peak-hour bandwidth degradation.
                     </div>
                   </GlassCard>
 

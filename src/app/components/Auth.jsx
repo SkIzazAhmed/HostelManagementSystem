@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Bed, LogIn, UserPlus, Mail, Lock } from 'lucide-react';
+import { LogIn, UserPlus, Mail, Lock } from 'lucide-react';
+import { LogoMark } from './brand/Logo';
 import { supabase, getProfile, saveProfile } from '../../supabase';
 
 export function Auth({ onAuthSuccess }) {
@@ -61,9 +62,9 @@ export function Auth({ onAuthSuccess }) {
           <motion.div
             animate={{ rotate: [0, -10, 10, 0] }}
             transition={{ duration: 3, repeat: Infinity, repeatDelay: 5 }}
-            className="p-3 bg-primary/10 rounded-full text-primary"
+            className="p-2 bg-primary/10 rounded-2xl"
           >
-            <Bed className="w-10 h-10" />
+            <LogoMark className="w-14 h-14 rounded-xl shadow-lg" title="DormDesk" />
           </motion.div>
         </div>
 

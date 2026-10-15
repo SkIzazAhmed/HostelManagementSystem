@@ -14,3 +14,9 @@
 body {
   background-color: rgb(6, 5, 13);
 }
+/* Icons keep their size inside flex rows instead of being squeezed by long labels. */
+@layer base {
+  svg.lucide {
+    flex-shrink: 0;
+  }
+}

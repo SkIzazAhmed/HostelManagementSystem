@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, Hash, DoorOpen, Check, MessageSquareWarning, MessageSquare, Send } from 'lucide-react';
+import { Mail, Hash, DoorOpen, Check, MessageSquareWarning, MessageSquare, Send, TriangleAlert, Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GlassCard } from './GlassCard';
 import { AnimatedCard } from './AnimatedCard';
@@ -112,7 +112,13 @@ export function Complaints({ onAddComplaint }) {
         <div className="lg:col-span-1 space-y-6">
           <AnimatedCard delay={0.2}>
             <GlassCard className="p-6 sticky top-20">
-              <h3 className="mb-4">{submissionType === 'complaint' ? '⚠️ Complaint Guidelines' : '💡 Feedback Tips'}</h3>
+              <h3 className="mb-4 flex items-center gap-2">
+                {submissionType === 'complaint' ? (
+                  <><TriangleAlert className="w-5 h-5 text-red-500" />Complaint Guidelines</>
+                ) : (
+                  <><Lightbulb className="w-5 h-5 text-amber-500" />Feedback Tips</>
+                )}
+              </h3>
               <ul className="space-y-3 text-sm text-muted-foreground">
                 {submissionType === 'complaint' ? (
                   <>

@@ -335,6 +335,7 @@ export function Services({ onBookNow }) {
               {/* Close Button */}
               <button
                 onClick={() => setShowSpeedTest(false)}
+                aria-label="Close speed test"
                 className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 border border-white/5 text-muted-foreground hover:text-foreground transition-all hover:scale-105 active:scale-95 cursor-pointer z-30"
               >
                 <X className="w-5 h-5" />

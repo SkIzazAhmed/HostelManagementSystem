@@ -13,7 +13,8 @@ import { useEffect } from 'react';
 import { supabase, getProfile, syncLocalData } from '../supabase';
 import { ManagerDashboard } from './components/ManagerDashboard';
 import { motion } from 'motion/react';
-import { Bed, AlertCircle } from 'lucide-react';
+import { Bed, AlertCircle, MapPin, Phone, Mail } from 'lucide-react';
+import { LogoMark } from './components/brand/Logo';
 import { GlassCard } from './components/GlassCard';
 import { Toaster, toast } from 'sonner';
 
@@ -417,7 +418,10 @@ export default function App() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div>
-                <h4 className="mb-4">DormDesk</h4>
+                <h4 className="mb-4 flex items-center gap-2">
+                  <LogoMark className="w-7 h-7" />
+                  DormDesk
+                </h4>
                 <p className="text-sm opacity-80">
                   Smart hostel management for Newton School of Technology.
                   Efficient, secure, and student-friendly.
@@ -440,9 +444,18 @@ export default function App() {
               <div>
                 <h4 className="mb-4">Contact</h4>
                 <ul className="space-y-2 text-sm opacity-80">
-                  <li>📍 Newton School of Technology,Mailasandra,Bengaluru</li>
-                  <li>📞 +91 8100282092</li>
-                  <li>✉️ info.dormdesk@gmail.com</li>
+                  <li className="flex items-start gap-2">
+                    <MapPin className="w-4 h-4 mt-0.5" />
+                    <span><span className="sr-only">Address: </span>Newton School of Technology, Mailasandra, Bengaluru</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Phone className="w-4 h-4" />
+                    <span><span className="sr-only">Phone: </span>+91 8100282092</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    <span><span className="sr-only">Email: </span>info.dormdesk@gmail.com</span>
+                  </li>
                 </ul>
               </div>
             </div>

@@ -1,13 +1,14 @@
-import { Menu, X, Home, Bed, Info, Settings, Sparkles, Wrench, MessageSquareWarning, LogIn, LogOut } from 'lucide-react';
+import { Menu, X, House, Bed, Info, Settings, Wrench, MessageSquareWarning, LogIn, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { LogoMark } from './brand/Logo';
 
 export function Header({ currentView, onViewChange, user, isAdmin, onLogout, hasRoom }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // If not logged in, restrict nav items.
   const allNavItems = [
-    { id: 'home', label: 'Home', icon: Home },
+    { id: 'home', label: 'Home', icon: House },
     { id: 'about', label: 'About Us', icon: Info },
     { id: 'rooms', label: 'Rooms', icon: Bed },
     { id: 'services', label: 'Services', icon: Wrench },
@@ -34,23 +35,24 @@ export function Header({ currentView, onViewChange, user, isAdmin, onLogout, has
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <motion.div
-            className="flex items-center gap-3 cursor-pointer"
+          <motion.button
+            type="button"
+            className="flex items-center gap-3 cursor-pointer rounded-lg"
             whileHover={{ scale: 1.05 }}
             onClick={() => onViewChange('home')}
+            aria-label="DormDesk home"
           >
             <motion.div
               animate={{ rotate: [0, 10, -10, 0] }}
               transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
             >
-              <Bed className="w-8 h-8" />
+              <LogoMark className="w-9 h-9 shadow-md rounded-lg" />
             </motion.div>
             <span className="font-semibold text-lg">DormDesk</span>
-            <Sparkles className="w-4 h-4 text-yellow-300" />
-          </motion.div>
+          </motion.button>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex gap-2 items-center">
+          <nav className="hidden md:flex gap-2 items-center" aria-label="Main">
             {navItems.map((item) => (
               <motion.button
                 key={item.id}
@@ -62,6 +64,7 @@ export function Header({ currentView, onViewChange, user, isAdmin, onLogout, has
                 }`}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                aria-current={currentView === item.id ? 'page' : undefined}
               >
                 <item.icon className="w-4 h-4" />
                 {item.label}
@@ -105,6 +108,9 @@ export function Header({ currentView, onViewChange, user, isAdmin, onLogout, has
             className="md:hidden p-2 rounded-lg hover:bg-primary-foreground/10"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             whileTap={{ scale: 0.9 }}
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-nav"
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </motion.button>
@@ -118,6 +124,8 @@ export function Header({ currentView, onViewChange, user, isAdmin, onLogout, has
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               className="md:hidden overflow-hidden"
+              id="mobile-nav"
+              aria-label="Main"
             >
               <div className="py-4 space-y-2">
                 {navItems.map((item, index) => (
@@ -136,6 +144,7 @@ export function Header({ currentView, onViewChange, user, isAdmin, onLogout, has
                         : 'hover:bg-primary-foreground/10'
                     }`}
                     whileTap={{ scale: 0.95 }}
+                    aria-current={currentView === item.id ? 'page' : undefined}
                   >
                     <item.icon className="w-5 h-5" />
                     {item.label}

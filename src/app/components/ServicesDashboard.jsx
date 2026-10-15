@@ -8,8 +8,10 @@ import { SpeedTest } from './SpeedTest';
 import {
   WashingMachine, UtensilsCrossed, Sparkle, CreditCard, Wifi, Headphones,
   LayoutDashboard, Bell, User, LogOut, Clock, CheckCircle, AlertCircle,
-  ChevronRight, Calendar, MessageSquareWarning, Bed, Home
+  ChevronRight, Calendar, MessageSquareWarning, Bed, BedDouble, House,
+  Brush, ShowerHead, Bug, Phone, Hand
 } from 'lucide-react';
+import { Logo } from './brand/Logo';
 
 const serviceDetails = {
   laundry: {
@@ -42,10 +44,10 @@ const serviceDetails = {
     color: 'from-purple-500 to-pink-500',
     description: 'Request room cleaning, linen change, or report maintenance issues.',
     requests: [
-      { type: 'Room Cleaning', eta: '2 hrs', icon: '🧹' },
-      { type: 'Linen Change', eta: '4 hrs', icon: '🛏️' },
-      { type: 'Bathroom Clean', eta: '1 hr', icon: '🚿' },
-      { type: 'Pest Control', eta: '24 hrs', icon: '🐛' },
+      { type: 'Room Cleaning', eta: '2 hrs', icon: Brush },
+      { type: 'Linen Change', eta: '4 hrs', icon: BedDouble },
+      { type: 'Bathroom Clean', eta: '1 hr', icon: ShowerHead },
+      { type: 'Pest Control', eta: '24 hrs', icon: Bug },
     ]
   },
   payments: {
@@ -70,7 +72,7 @@ const serviceDetails = {
       { label: 'Speed', value: '100 Mbps' },
       { label: 'Data Used', value: '45.2 GB / Unlimited' },
       { label: 'Connected Devices', value: '2 / 3 allowed' },
-      { label: 'Status', value: '🟢 Connected' },
+      { label: 'Status', value: 'Connected', online: true },
     ]
   },
   support: {
@@ -273,7 +275,9 @@ export function ServicesDashboard({ user, bookingsData, bookingData, onLogout, o
                 <AnimatedCard key={i} delay={i * 0.1}>
                   <GlassCard className="p-5 hover:border-purple-500/50 transition-all cursor-pointer group">
                     <div className="flex items-center gap-3 mb-3">
-                      <span className="text-3xl">{req.icon}</span>
+                      <span className="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center">
+                        <req.icon className="w-6 h-6" />
+                      </span>
                       <div>
                         <h3 className="font-semibold group-hover:text-purple-500 transition-colors text-foreground">{req.type}</h3>
                         <p className="text-sm text-muted-foreground">ETA: {req.eta}</p>
@@ -398,7 +402,10 @@ export function ServicesDashboard({ user, bookingsData, bookingData, onLogout, o
                   {service.info.map((item, i) => (
                     <motion.div key={i} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }} className="flex items-center justify-between py-3 border-b border-border/40 last:border-0">
                       <span className="text-muted-foreground text-sm">{item.label}</span>
-                      <span className="font-semibold text-sm text-foreground">{item.value}</span>
+                      <span className="font-semibold text-sm text-foreground flex items-center gap-2">
+                        {item.online && <span className="w-2 h-2 rounded-full bg-green-500" aria-hidden="true" />}
+                        {item.value}
+                      </span>
                     </motion.div>
                   ))}
                 </div>
@@ -421,8 +428,14 @@ export function ServicesDashboard({ user, bookingsData, bookingData, onLogout, o
                   <p className="text-sm text-muted-foreground mb-1">{contact.role}</p>
                   <h3 className="font-semibold text-lg mb-2">{contact.name}</h3>
                   <div className="space-y-1 text-sm">
-                    <p>📞 {contact.phone}</p>
-                    <p>🕐 {contact.available}</p>
+                    <p className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-muted-foreground" />
+                      <span><span className="sr-only">Phone: </span>{contact.phone}</span>
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-muted-foreground" />
+                      <span><span className="sr-only">Available: </span>{contact.available}</span>
+                    </p>
                   </div>
                   <motion.a href={`tel:${contact.phone.replace(/\s/g, '')}`} className="mt-3 block w-full py-2 rounded-lg bg-red-500/10 text-red-500 text-sm font-medium hover:bg-red-500/20 transition-colors text-center" whileTap={{ scale: 0.95 }}>
                     Call Now
@@ -449,7 +462,10 @@ export function ServicesDashboard({ user, bookingsData, bookingData, onLogout, o
         <GlassCard className="p-8 bg-gradient-to-br from-primary/5 to-purple-500/5 relative overflow-hidden">
           <motion.div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 4, repeat: Infinity }} />
           <div className="relative z-10">
-            <h1 className="text-3xl font-bold mb-2">Welcome back, {studentName}! 👋</h1>
+            <h1 className="text-3xl font-bold mb-2 flex items-center gap-3 flex-wrap">
+              Welcome back, {studentName}!
+              <Hand className="w-8 h-8 text-amber-500" />
+            </h1>
             <p className="text-muted-foreground text-lg">Here's your hostel dashboard at a glance.</p>
             <div className="flex flex-wrap gap-4 mt-4">
               <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-sm">
@@ -480,7 +496,10 @@ export function ServicesDashboard({ user, bookingsData, bookingData, onLogout, o
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.97 }}
                       >
-                        🛏️ {booking.roomName} ({booking.bookingRef})
+                        <span className="inline-flex items-center gap-1.5">
+                          <BedDouble className="w-3.5 h-3.5" />
+                          {booking.roomName} ({booking.bookingRef})
+                        </span>
                       </motion.button>
                     );
                   })}
@@ -622,15 +641,7 @@ export function ServicesDashboard({ user, bookingsData, bookingData, onLogout, o
       {/* Sidebar - Desktop */}
       <aside className="hidden lg:flex flex-col w-64 bg-card border-r border-border fixed h-full z-40">
         <div className="p-6 border-b border-border">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
-              <Bed className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h3 className="font-bold text-lg">DormDesk</h3>
-              <p className="text-xs text-muted-foreground">Student Portal</p>
-            </div>
-          </div>
+          <Logo tagline="Student Portal" />
         </div>
         {bookings.length > 1 && (
           <div className="px-6 py-3 border-b border-border bg-muted/10">
@@ -674,7 +685,7 @@ export function ServicesDashboard({ user, bookingsData, bookingData, onLogout, o
               className="w-full mb-3 flex items-center gap-3 px-4 py-2.5 rounded-xl text-left text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
               whileTap={{ scale: 0.97 }}
             >
-              <Home className="w-4 h-4" />
+              <House className="w-4 h-4" />
               <span className="font-medium">Main Website</span>
             </motion.button>
           )}
@@ -687,7 +698,7 @@ export function ServicesDashboard({ user, bookingsData, bookingData, onLogout, o
               <p className="text-xs text-muted-foreground truncate">{roomName}</p>
             </div>
             {onLogout && (
-              <button onClick={onLogout} title="Log Out" className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+              <button onClick={onLogout} title="Log Out" aria-label="Log out" className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
                 <LogOut className="w-4 h-4" />
               </button>
             )}
@@ -698,27 +709,24 @@ export function ServicesDashboard({ user, bookingsData, bookingData, onLogout, o
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border">
         <div className="flex items-center justify-between px-4 h-16">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
-              <Bed className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-bold">DormDesk</span>
-          </div>
+          <Logo markClassName="w-9 h-9" nameClassName="font-bold" />
           <div className="flex items-center gap-1.5">
             {onLogout && (
-              <button onClick={onLogout} title="Log Out" className="p-2 rounded-lg hover:bg-muted text-muted-foreground transition-colors">
+              <button onClick={onLogout} title="Log Out" aria-label="Log out" className="p-2 rounded-lg hover:bg-muted text-muted-foreground transition-colors">
                 <LogOut className="w-5 h-5" />
               </button>
             )}
             {onBackToWebsite && (
-              <button onClick={onBackToWebsite} title="Main Website" className="p-2 rounded-lg hover:bg-muted text-muted-foreground transition-colors">
-                <Home className="w-5 h-5" />
+              <button onClick={onBackToWebsite} title="Main Website" aria-label="Back to main website" className="p-2 rounded-lg hover:bg-muted text-muted-foreground transition-colors">
+                <House className="w-5 h-5" />
               </button>
             )}
             <motion.button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="p-2 rounded-lg hover:bg-muted"
               whileTap={{ scale: 0.9 }}
+              aria-label={sidebarOpen ? 'Close dashboard menu' : 'Open dashboard menu'}
+              aria-expanded={sidebarOpen}
             >
               <LayoutDashboard className="w-5 h-5" />
             </motion.button>

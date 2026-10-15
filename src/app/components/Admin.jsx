@@ -227,7 +227,7 @@ export function Admin({ rooms, bookings, complaints = [], onAddRoom, onDeleteRoo
                     <GlassCard className="p-6 group hover:shadow-xl transition-all">
                       <div className="flex items-start justify-between mb-4">
                         <div><h3 className="mb-1">{room.name}</h3><p className="text-sm text-muted-foreground">{room.type} Room</p></div>
-                        <motion.button onClick={() => onDeleteRoom(room.id)} className="text-destructive hover:bg-destructive/10 p-2 rounded-lg" whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}><Trash2 className="w-4 h-4" /></motion.button>
+                        <motion.button onClick={() => onDeleteRoom(room.id)} aria-label={`Delete ${room.name}`} title="Delete room" className="text-destructive hover:bg-destructive/10 p-2 rounded-lg" whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}><Trash2 className="w-4 h-4" /></motion.button>
                       </div>
                       <div className="grid grid-cols-3 gap-4 mb-4">
                         <div><p className="text-2xl font-semibold">{room.capacity}</p><p className="text-xs text-muted-foreground">Capacity</p></div>

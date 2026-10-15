@@ -1,4 +1,4 @@
-import { Users, Bed, CheckCircle, Plus, BedDouble } from 'lucide-react';
+import { Users, Bed, CheckCircle, Plus, BedDouble, House } from 'lucide-react';
 import { motion } from 'motion/react';
 import { AnimatedCard } from './AnimatedCard';
 import { GlassCard } from './GlassCard';
@@ -103,8 +103,10 @@ export function Rooms({ rooms, onBookRoom, onAddRoom, isAdmin, hasExistingBookin
             <AnimatedCard key={room.id} delay={index * 0.1}>
               <GlassCard className="overflow-hidden hover:shadow-2xl transition-all duration-300 group">
                 <motion.div className={`bg-gradient-to-br ${getGradient(index)} p-16 text-center relative overflow-hidden`} whileHover={{ scale: 1.05 }}>
-                  <motion.div className="text-7xl" animate={{ rotate: [0, 10, -10, 0] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}>
-                    {room.type.toLowerCase() === 'shared' ? '🛏️' : '🏠'}
+                  <motion.div className="flex justify-center text-foreground/70" animate={{ rotate: [0, 10, -10, 0] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}>
+                    {room.type.toLowerCase() === 'shared'
+                      ? <BedDouble className="w-20 h-20" strokeWidth={1.5} />
+                      : <House className="w-20 h-20" strokeWidth={1.5} />}
                   </motion.div>
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 </motion.div>
